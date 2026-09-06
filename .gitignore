@@ -1,0 +1,124 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+build/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.production
+.env.development
+*.env
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 3D Processing
+*.cache
+*.tmp
+temp/
+output/
+MeshroomCache/
+*.mg
+*.abc
+*.obj
+*.ply
+*.fbx
+*.dae
+*.3ds
+*.stl
+*.wrl
+
+# Modelos grandes
+*.glb
+*.gltf
+*.bin
+*.texture
+*.material
+
+# Fotos
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.webp
+*.heic
+*.raw
+
+# Vídeos
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+secrets/
+secrets.json
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+
+# Supabase
+.supabase/
+supabase/.branches/
+supabase/.temp/
+supabase/.secrets/
+supabase/migrations/*.sql.local
+supabase/config.toml.local

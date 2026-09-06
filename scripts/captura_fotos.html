@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Captura de Fotos - Project Imob</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      max-width: 500px;
+      width: 100%;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 24px;
+      text-align: center;
+    }
+    .info {
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+    .camera-container {
+      position: relative;
+      width: 100%;
+      height: 400px;
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+    }
+    .grid {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
+      background-size: 33.33% 33.33%;
+      pointer-events: none;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 50px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    button:hover {
+      background: #0056b3;
+      transform: scale(1.05);
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-capture {
+      background: #28a745;
+    }
+    .btn-capture:hover {
+      background: #218838;
+    }
+    .btn-stop {
+      background: #dc3545;
+    }
+    .btn-stop:hover {
+      background: #c82333;
+    }
+    .progress {
+      background: #f0f0f0;
+      height: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #28a745;
+      transition: width 0.3s;
+    }
+    .counter {
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+    }
+    .instructions {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #856404;
+    }
+    .instructions ul {
+      margin-left: 20px;
+      margin-top: 10px;
+    }
+    .instructions li {
+      margin-bottom: 5px;
+    }
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .photo-item {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      border-radius: 5px;
+      overflow: hidden;
+      background: #f0f0f0;
+    }
+    .photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .photo-item .delete {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(220, 53, 69, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📸 Captura de Fotos</h1>
+    
+    <div class="info">
+      <strong>Dicas para boa captura:</strong>
+      <ul style="margin-left: 20px; margin-top: 10px; font-size: 13px;">
+        <li>Mova-se devagar pelo ambiente</li>
+        <li>Mantenha 60-80% de sobreposição entre fotos</li>
+        <li>Capture em diferentes alturas</li>
+        <li>Evite objetos em movimento</li>
+        <li>Mínimo: 30 fotos | Ideal: 50-80 fotos</li>
+      </ul>
+    </div>
+
+    <div class="camera-container">
+      <video id="video" autoplay playsinline></video>
+      <div class="overlay">
+        <div class="grid"></div>
+        <div style="color: white; text-align: center; margin-top: auto; padding: 20px; background: rgba(0,0,0,0.5);">
+          Posicione a câmera e capture
+        </div>
+      </div>
+    </div>
+
+    <div class="progress">
+      <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+    </div>
+    <div class="counter" id="counter">Fotos capturadas: 0 / 30</div>
+
+    <div class="controls">
+      <button id="startBtn" class="btn-capture">Iniciar Câmera</button>
+      <button id="captureBtn" disabled>📷 Capturar</button>
+      <button id="stopBtn" disabled class="btn-stop">Parar</button>
+    </div>
+
+    <div class="instructions">
+      <strong>📋 Passo a passo:</strong>
+      <ul>
+        <li>Capture as paredes e cantos do ambiente</li>
+        <li>Faça um círculo completo no cômodo</li>
+        <li>Capture o piso e o teto</li>
+        <li>Não esqueça de portas e janelas</li>
+      </ul>
+    </div>
+
+    <div class="photos-grid" id="photosGrid"></div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const startBtn = document.getElementById('startBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const progressBar = document.getElementById('progressBar');
+    const counter = document.getElementById('counter');
+    const photosGrid = document.getElementById('photosGrid');
+
+    let stream = null;
+    let photos = [];
+    let photoCount = 0;
+
+    startBtn.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          } 
+        });
+        video.srcObject = stream;
+        startBtn.disabled = true;
+        captureBtn.disabled = false;
+        stopBtn.disabled = false;
+      } catch (err) {
+        alert('Erro ao acessar câmera: ' + err.message);
+      }
+    });
+
+    captureBtn.addEventListener('click', () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      
+      const photoData = canvas.toDataURL('image/jpeg', 0.9);
+      photos.push(photoData);
+      photoCount++;
+      
+      // Atualizar progresso
+      const progress = Math.min((photoCount / 30) * 100, 100);
+      progressBar.style.width = progress + '%';
+      counter.textContent = `Fotos capturadas: ${photoCount} / 30`;
+      
+      // Adicionar miniatura
+      const photoItem = document.createElement('div');
+      photoItem.className = 'photo-item';
+      photoItem.innerHTML = `
+        <img src="${photoData}" alt="Foto ${photoCount}">
+        <button class="delete" onclick="removerFoto(${photoCount - 1})">×</button>
+      `;
+      photosGrid.appendChild(photoItem);
+      
+      if (photoCount >= 30) {
+        captureBtn.disabled = true;
+        alert('Mínimo de fotos atingido! Você pode continuar capturando mais fotos para melhor qualidade.');
+      }
+    });
+
+    stopBtn.addEventListener('click', () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      startBtn.disabled = false;
+      captureBtn.disabled = true;
+      stopBtn.disabled = true;
+      
+      if (photoCount > 0) {
+        baixarFotos();
+      }
+    });
+
+    function removerFoto(index) {
+      photos.splice(index, 1);
+      photoCount--;
+      progressBar.style.width = Math.min((photoCount / 30) * 100, 100) + '%';
+      counter.textContent = `Fotos capturadas: ${photoCount} / 30`;
+      
+      // Reconstruir grid
+      photosGrid.innerHTML = '';
+      photos.forEach((photo, i) => {
+        const photoItem = document.createElement('div');
+        photoItem.className = 'photo-item';
+        photoItem.innerHTML = `
+          <img src="${photo}" alt="Foto ${i + 1}">
+          <button class="delete" onclick="removerFoto(${i})">×</button>
+        `;
+        photosGrid.appendChild(photoItem);
+      });
+    }
+
+    function baixarFotos() {
+      const zip = new JSZip();
+      const imgFolder = zip.folder('fotos');
+      
+      photos.forEach((photo, index) => {
+        const data = photo.split(',')[1];
+        imgFolder.file(`foto_${String(index + 1).padStart(3, '0')}.jpg`, data, {base64: true});
+      });
+      
+      zip.generateAsync({type: 'blob'}).then(content => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = `fotos_imovel_${new Date().toISOString().slice(0,10)}.zip`;
+        link.click();
+      });
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html>

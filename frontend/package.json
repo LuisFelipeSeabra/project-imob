@@ -1,0 +1,11 @@
+{
+  "name": "project-imob-frontend",
+  "version": "1.0.0",
+  "description": "Frontend WebXR para visualização de imóveis em realidade virtual",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve ."
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
