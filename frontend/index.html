@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project Imob - Tour Virtual</title>
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="otimizacao.js"></script>
   <style>
     body {
       margin: 0;
@@ -191,32 +192,54 @@
       }
     }
 
-    // Função para carregar modelo 3D
+    // Função para carregar modelo 3D com otimização
     function carregarModelo(url) {
       const assetItem = document.getElementById('imovel');
       
-      // Adicionar evento de carregamento
-      assetItem.addEventListener('loaded', () => {
-        loadingEl.style.display = 'none';
-        console.log('Modelo carregado com sucesso');
-      });
+      // Usar otimizador de performance
+      if (typeof otimizadorPerformance !== 'undefined') {
+        // Carregar com lazy loading e LOD
+        otimizadorPerformance.carregarLazy(url, { x: 0, y: 0, z: 0 })
+          .then(modelo => {
+            // Aplicar LOD
+            const modeloLOD = otimizadorPerformance.criarLOD(modelo, 'imovel');
+            
+            // Substituir modelo na cena
+            const scene = document.querySelector('a-scene');
+            const entity = document.createElement('a-entity');
+            entity.setObject3D('mesh', modeloLOD);
+            scene.appendChild(entity);
+            
+            loadingEl.style.display = 'none';
+            console.log('Modelo carregado e otimizado');
+          })
+          .catch(error => {
+            mostrarErro('Erro ao carregar modelo: ' + error.message);
+          });
+      } else {
+        // Fallback para carregamento simples
+        assetItem.addEventListener('loaded', () => {
+          loadingEl.style.display = 'none';
+          console.log('Modelo carregado com sucesso');
+        });
 
-      assetItem.addEventListener('error', (e) => {
-        mostrarErro('Erro ao carregar modelo 3D');
-        console.error('Erro no modelo:', e);
-      });
+        assetItem.addEventListener('error', (e) => {
+          mostrarErro('Erro ao carregar modelo 3D');
+          console.error('Erro no modelo:', e);
+        });
 
-      // Simular progresso
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 10;
-        progressBarEl.style.width = progress + '%';
-        if (progress >= 90) {
-          clearInterval(interval);
-        }
-      }, 200);
+        // Simular progresso
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += 10;
+          progressBarEl.style.width = progress + '%';
+          if (progress >= 90) {
+            clearInterval(interval);
+          }
+        }, 200);
 
-      assetItem.setAttribute('src', url);
+        assetItem.setAttribute('src', url);
+      }
     }
 
     // Carregar imóvel quando a página carregar

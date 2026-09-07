@@ -186,21 +186,32 @@ except Exception as e:
     print(f"Erro ao importar modelo: {{e}}")
     sys.exit(1)
 
-# Aplicar decimate
+# Aplicar decimate com múltiplos níveis
 for obj in bpy.context.selected_objects:
     if obj.type == 'MESH':
         print(f"Processando objeto: {{obj.name}}")
         
-        # Aplicar decimate
-        decimate = obj.modifiers.new(name='Decimate', type='DECIMATE')
-        decimate.ratio = 0.5  # Reduzir 50% dos polígonos
-        
+        # Nível 1: Alta qualidade (10% redução)
+        decimate1 = obj.modifiers.new(name='Decimate_High', type='DECIMATE')
+        decimate1.ratio = 0.9
         bpy.context.view_layer.objects.active = obj
-        bpy.ops.object.modifier_apply(modifier='Decimate')
+        bpy.ops.object.modifier_apply(modifier='Decimate_High')
+        
+        # Nível 2: Média qualidade (30% redução)
+        decimate2 = obj.modifiers.new(name='Decimate_Medium', type='DECIMATE')
+        decimate2.ratio = 0.7
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.modifier_apply(modifier='Decimate_Medium')
+        
+        # Nível 3: Baixa qualidade (50% redução)
+        decimate3 = obj.modifiers.new(name='Decimate_Low', type='DECIMATE')
+        decimate3.ratio = 0.5
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.modifier_apply(modifier='Decimate_Low')
         
         print(f"Polígonos reduzidos em {{obj.name}}")
 
-# Exportar para GLB
+# Exportar para GLB com compressão
 try:
     bpy.ops.export_scene.gltf(
         filepath='{modelo_output}',
@@ -211,9 +222,11 @@ try:
         export_normals=True,
         export_materials='EXPORT',
         export_cameras=False,
-        export_lights=False
+        export_lights=False,
+        export_draco_mesh_compression_enable=True,
+        export_draco_mesh_compression_level=6
     )
-    print("Modelo exportado para GLB com sucesso")
+    print("Modelo exportado para GLB com compressão Draco")
 except Exception as e:
     print(f"Erro ao exportar modelo: {{e}}")
     sys.exit(1)
