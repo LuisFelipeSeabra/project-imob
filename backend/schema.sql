@@ -38,6 +38,12 @@ create table imoveis (
   status text default 'processando',
   destaque boolean default false,
   views integer default 0,
+  tamanho_modelo bigint,
+  formato_modelo text,
+  hash_modelo text,
+  metadados jsonb,
+  versao integer default 1,
+  deleted_at timestamp,
   created_at timestamp default now(),
   updated_at timestamp default now()
 );
@@ -86,13 +92,64 @@ create table favoritos (
   unique(cliente_id, imovel_id)
 );
 
+-- Tabela de processamento/jobs
+create table processamento (
+  id uuid default gen_random_uuid() primary key,
+  imovel_id uuid references imoveis(id) on delete cascade,
+  tipo text not null check (tipo in ('fotos', 'modelo_3d', 'tour_360')),
+  status text default 'pendente' check (status in ('pendente', 'processando', 'concluido', 'erro')),
+  progresso integer default 0 check (progresso >= 0 and progresso <= 100),
+  input_data jsonb,
+  output_data jsonb,
+  erro_mensagem text,
+  tentativas integer default 0,
+  max_tentativas integer default 3,
+  created_at timestamp default now(),
+  updated_at timestamp default now(),
+  started_at timestamp,
+  finished_at timestamp
+);
+
+-- Tabela de configurações do sistema
+create table configuracoes (
+  id uuid default gen_random_uuid() primary key,
+  chave text unique not null,
+  valor jsonb,
+  descricao text,
+  categoria text,
+  created_at timestamp default now(),
+  updated_at timestamp default now()
+);
+
+-- Tabela de logs/auditoria
+create table logs (
+  id uuid default gen_random_uuid() primary key,
+  nivel text not null check (nivel in ('info', 'warning', 'error', 'critical')),
+  acao text not null,
+  tabela_afetada text,
+  registro_id uuid,
+  dados_anteriores jsonb,
+  dados_novos jsonb,
+  usuario_id uuid,
+  ip_address inet,
+  user_agent text,
+  created_at timestamp default now()
+);
+
 -- Índices para performance
 create index idx_imoveis_imobiliaria on imoveis(imobiliaria_id);
 create index idx_imoveis_status on imoveis(status);
 create index idx_imoveis_destaque on imoveis(destaque);
+create index idx_imoveis_deleted on imoveis(deleted_at);
 create index idx_visualizacoes_imovel on visualizacoes(imovel_id);
 create index idx_visualizacoes_cliente on visualizacoes(cliente_id);
 create index idx_fotos_imovel on fotos_captura(imovel_id);
+create index idx_processamento_imovel on processamento(imovel_id);
+create index idx_processamento_status on processamento(status);
+create index idx_processamento_tipo on processamento(tipo);
+create index idx_logs_nivel on logs(nivel);
+create index idx_logs_acao on logs(acao);
+create index idx_logs_created on logs(created_at);
 
 -- Triggers para updated_at
 create or replace function update_updated_at()
@@ -163,3 +220,20 @@ create policy "Imobiliárias veem visualizações de seus imóveis" on visualiza
 
 create policy "Favoritos do cliente" on favoritos
   for all using (cliente_id = auth.uid());
+
+-- Políticas para tabela de processamento
+create policy "Imobiliárias veem processamento de seus imóveis" on processamento
+  for all using (imovel_id in (
+    select id from imoveis where imobiliaria_id = auth.uid()
+  ));
+
+-- Políticas para tabela de configurações
+create policy "Configurações públicas" on configuracoes
+  for select using (true);
+
+create policy "Configurações apenas para admin" on configuracoes
+  for all using (auth.jwt() ->> 'role' = 'admin');
+
+-- Políticas para tabela de logs
+create policy "Logs apenas para admin" on logs
+  for all using (auth.jwt() ->> 'role' = 'admin');

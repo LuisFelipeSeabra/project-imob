@@ -348,5 +348,61 @@
     }
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Configuração do Supabase
+    const SUPABASE_URL = 'https://seu-projeto.supabase.co';
+    const SUPABASE_ANON_KEY = 'sua-anon-key';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function uploadParaSupabase(photoData, index, imovelId) {
+      try {
+        const { data, error } = await supabase.storage
+          .from('fotos-captura')
+          .upload(`${imovelId}/foto_${String(index + 1).padStart(3, '0')}.jpg`, 
+            dataURLtoBlob(photoData), {
+              contentType: 'image/jpeg',
+              upsert: true
+            });
+        
+        if (error) throw error;
+        
+        // Salvar referência no banco
+        await supabase.from('fotos_captura').insert({
+          imovel_id: imovelId,
+          url_foto: data.path,
+          nome_arquivo: `foto_${index + 1}.jpg`,
+          processada: false
+        });
+        
+        return true;
+      } catch (err) {
+        console.error('Erro no upload:', err);
+        return false;
+      }
+    }
+
+    function dataURLtoBlob(dataURL) {
+      const arr = dataURL.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    }
+
+    async function enviarTodasFotos() {
+      const imovelId = document.getElementById('imovelId').value || 'imovel_' + Date.now();
+      
+      for (let i = 0; i < photos.length; i++) {
+        await uploadParaSupabase(photos[i], i, imovelId);
+      }
+      
+      alert('Fotos enviadas com sucesso! ID do imóvel: ' + imovelId);
+    }
+  </script>
 </body>
 </html>

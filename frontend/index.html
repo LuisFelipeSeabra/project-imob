@@ -65,9 +65,18 @@
 <body>
   <div id="ui">
     <h1>🏠 Tour Virtual</h1>
-    <p><strong>Imóvel:</strong> Apartamento Exemplo</p>
-    <p><strong>Área:</strong> 120m²</p>
-    <p><strong>Status:</strong> Pronto para visita</p>
+    <p><strong>Imóvel:</strong> <span id="tituloImovel">Carregando...</span></p>
+    <p><strong>Área:</strong> <span id="areaImovel">-</span></p>
+    <p><strong>Status:</strong> <span id="statusImovel">-</span></p>
+    <div id="loading" style="display: none; margin-top: 10px;">
+      <div style="width: 100%; background: #f0f0f0; border-radius: 5px; height: 10px;">
+        <div id="progressBar" style="width: 0%; height: 100%; background: #007bff; border-radius: 5px; transition: width 0.3s;"></div>
+      </div>
+      <p style="font-size: 12px; color: #666; margin-top: 5px;">Carregando modelo...</p>
+    </div>
+    <div id="error" style="display: none; margin-top: 10px; padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; color: #721c24; font-size: 12px;">
+      <strong>Erro:</strong> <span id="errorMsg"></span>
+    </div>
     <button class="btn" onclick="window.location.reload()">Reiniciar Tour</button>
   </div>
 
@@ -121,11 +130,104 @@
   </div>
 
   <script>
-    // Configuração dinâmica do modelo via parâmetro URL
+    // Configuração do Supabase
+    const SUPABASE_URL = 'https://seu-projeto.supabase.co';
+    const SUPABASE_ANON_KEY = 'sua-anon-key';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Elementos da UI
+    const loadingEl = document.getElementById('loading');
+    const progressBarEl = document.getElementById('progressBar');
+    const errorEl = document.getElementById('error');
+    const errorMsgEl = document.getElementById('errorMsg');
+    const tituloEl = document.getElementById('tituloImovel');
+    const areaEl = document.getElementById('areaImovel');
+    const statusEl = document.getElementById('statusImovel');
+
+    // Parâmetros da URL
     const urlParams = new URLSearchParams(window.location.search);
+    const imovelId = urlParams.get('id');
     const modeloUrl = urlParams.get('modelo');
-    if (modeloUrl) {
+
+    // Função para mostrar erro
+    function mostrarErro(mensagem) {
+      errorEl.style.display = 'block';
+      errorMsgEl.textContent = mensagem;
+      loadingEl.style.display = 'none';
+    }
+
+    // Função para carregar dados do imóvel
+    async function carregarImovel() {
+      if (!imovelId) {
+        mostrarErro('ID do imóvel não fornecido');
+        return;
+      }
+
+      try {
+        loadingEl.style.display = 'block';
+        
+        const { data: imovel, error } = await supabase
+          .from('imoveis')
+          .select('*')
+          .eq('id', imovelId)
+          .single();
+
+        if (error) throw error;
+
+        // Atualizar UI
+        tituloEl.textContent = imovel.titulo;
+        areaEl.textContent = imovel.area_m2 ? imovel.area_m2 + 'm²' : 'Não informado';
+        statusEl.textContent = imovel.status;
+
+        // Carregar modelo
+        if (imovel.url_modelo_3d) {
+          carregarModelo(imovel.url_modelo_3d);
+        } else {
+          mostrarErro('Modelo 3D não disponível');
+        }
+
+      } catch (err) {
+        mostrarErro('Erro ao carregar imóvel: ' + err.message);
+      }
+    }
+
+    // Função para carregar modelo 3D
+    function carregarModelo(url) {
+      const assetItem = document.getElementById('imovel');
+      
+      // Adicionar evento de carregamento
+      assetItem.addEventListener('loaded', () => {
+        loadingEl.style.display = 'none';
+        console.log('Modelo carregado com sucesso');
+      });
+
+      assetItem.addEventListener('error', (e) => {
+        mostrarErro('Erro ao carregar modelo 3D');
+        console.error('Erro no modelo:', e);
+      });
+
+      // Simular progresso
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 10;
+        progressBarEl.style.width = progress + '%';
+        if (progress >= 90) {
+          clearInterval(interval);
+        }
+      }, 200);
+
+      assetItem.setAttribute('src', url);
+    }
+
+    // Carregar imóvel quando a página carregar
+    if (imovelId) {
+      carregarImovel();
+    } else if (modeloUrl) {
+      // Fallback para URL direta
       document.getElementById('imovel').setAttribute('src', modeloUrl);
+      loadingEl.style.display = 'none';
+    } else {
+      mostrarErro('Nenhum imóvel ou modelo especificado');
     }
   </script>
 </body>
